@@ -3,16 +3,18 @@ import { createNoise2D } from "simplex-noise";
 import seedrandom from "seedrandom";
 import { getSpritesheet } from "../utils/get-spritesheet";
 
+export type GroundSettings = {
+  scale: number;
+  octaves: number;
+  persistence: number;
+  exponent: number;
+  seed: string;
+};
+
 export const generateGround = async (
   width = 300,
   height = 120,
-  settings = {
-    scale: 20,
-    octaves: 3,
-    persistence: 0.5,
-    exponent: 1.0,
-    seed: "my-seed",
-  },
+  settings: GroundSettings,
 ) => {
   // Load the ground textures
   const shoreTextures = await getSpritesheet("/assets/shore.png", "shore", {
