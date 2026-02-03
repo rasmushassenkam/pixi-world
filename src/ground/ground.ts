@@ -1,10 +1,19 @@
 import { Container, Sprite } from "pixi.js";
 import { createNoise2D } from "simplex-noise";
+import seedrandom from "seedrandom";
 import { getSpritesheet } from "../utils/get-spritesheet";
 
-const noise2D = createNoise2D();
-
-export const generateGround = async (width = 50, height = 50) => {
+export const generateGround = async (
+  width = 300,
+  height = 120,
+  settings = {
+    scale: 10,
+    octaves: 1,
+    persistence: 0.5,
+    exponent: 1.0,
+    seed: "my-seed",
+  },
+) => {
   // Load the ground textures
   const shoreTextures = await getSpritesheet("/assets/shore.png", "shore", {
     frameWidth: 16,
@@ -13,28 +22,54 @@ export const generateGround = async (width = 50, height = 50) => {
     frameWidth: 16,
   });
 
+  // Create the RNG based on the seed
+  const rng = seedrandom(settings.seed);
+  const noise2D = createNoise2D(rng);
+
   const mapContainer = new Container();
-  const scale = 20; // "Zoom" level
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      // Generate noise value between -1 and 1, then normalize to 0 to 1
-      // We divide x and y by 'scale' to ensure smooth transitions
-      const rawNoise = noise2D(x / scale, y / scale);
-      const elevation = (rawNoise + 1) / 2;
+      let elevation = 0;
+      let amplitude = 1;
+      let frequency = 1 / settings.scale;
+      let maxAmplitude = 0;
+
+      // OCTAVES LOOP
+      // Accumulate multiple layers of noise
+      for (let i = 0; i < settings.octaves; i++) {
+        elevation += noise2D(x * frequency, y * frequency) * amplitude;
+        maxAmplitude += amplitude;
+
+        // Decrease amplitude for next layer (persistence)
+        amplitude *= settings.persistence;
+        // Increase frequency for next layer
+        frequency *= 2;
+      }
+
+      // NORMALIZATION
+      // Convert raw noise (approx -maxAmp to +maxAmp) to range 0.0 to 1.0
+      elevation = (elevation / maxAmplitude + 1) / 2;
+
+      // REDISTRIBUTION
+      // Apply power function to push values closer to 0 or 1
+      elevation = Math.pow(elevation, settings.exponent);
 
       let texture;
 
-      // Elevation-based Biome Selection
       if (elevation < 0.15) {
         texture = shoreTextures[`shore_0`]; // Deep Water
       } else if (elevation < 0.4) {
+        // Map 0.15-0.4 to shore textures
         const index = Math.floor(((elevation - 0.15) / 0.25) * 4);
-        texture = shoreTextures[`shore_${index}`]; // Shallow to Sand
+        // Clamp index to prevent potential array overflow
+        const safeIndex = Math.max(0, Math.min(3, index));
+        texture = shoreTextures[`shore_${safeIndex}`];
       } else {
         // Map 0.4-1.0 to grass textures
         const index = Math.min(2, Math.floor(((elevation - 0.4) / 0.6) * 3));
-        texture = grassTextures[`grass_${index}`];
+        const safeIndex = Math.max(0, index);
+        texture = grassTextures[`grass_${safeIndex}`];
       }
 
       const sprite = new Sprite(texture);
