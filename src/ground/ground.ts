@@ -1,35 +1,17 @@
-import { Assets, Container, Sprite, Spritesheet } from "pixi.js";
+import { Container, Sprite } from "pixi.js";
 import { createNoise2D } from "simplex-noise";
-
-const SPRITE_SIZE = 16;
-
-const getSpritesheet = async (url: string, name: string) => {
-  const texture = await Assets.load(url);
-  const data = {
-    frames: {},
-    meta: { scale: "1" },
-  };
-
-  // Create 5 frames for the 1x5 sheet
-  for (let i = 0; i < 5; i++) {
-    data.frames[`${name}_${i}`] = {
-      frame: { x: i * SPRITE_SIZE, y: 0, w: SPRITE_SIZE, h: SPRITE_SIZE },
-      sourceSize: { w: SPRITE_SIZE, h: SPRITE_SIZE },
-      spriteSourceSize: { x: 0, y: 0, w: SPRITE_SIZE, h: SPRITE_SIZE },
-    };
-  }
-
-  const sheet = new Spritesheet(texture, data);
-  await sheet.parse();
-  return sheet.textures;
-};
+import { getSpritesheet } from "../utils/get-spritesheet";
 
 const noise2D = createNoise2D();
 
 export const generateGround = async (width = 50, height = 50) => {
   // Load the ground textures
-  const shoreTextures = await getSpritesheet("/assets/shore.png", "shore");
-  const grassTextures = await getSpritesheet("/assets/grass.png", "grass");
+  const shoreTextures = await getSpritesheet("/assets/shore.png", "shore", {
+    frameWidth: 16,
+  });
+  const grassTextures = await getSpritesheet("/assets/grass.png", "grass", {
+    frameWidth: 16,
+  });
 
   const mapContainer = new Container();
   const scale = 20; // "Zoom" level
@@ -56,8 +38,8 @@ export const generateGround = async (width = 50, height = 50) => {
       }
 
       const sprite = new Sprite(texture);
-      sprite.x = x * SPRITE_SIZE;
-      sprite.y = y * SPRITE_SIZE;
+      sprite.x = x * 16;
+      sprite.y = y * 16;
       mapContainer.addChild(sprite);
     }
   }
