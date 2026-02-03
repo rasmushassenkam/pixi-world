@@ -3,6 +3,10 @@ import { generateGround } from "./ground/ground";
 import { createControls } from "./create-controls";
 import { enablePanning } from "./utils/enable-panning";
 
+const TILE_SIZE = 16;
+const MAP_WIDTH_TILES = 300;
+const MAP_HEIGHT_TILES = 120;
+
 const settings = {
   scale: 20,
   octaves: 3,
@@ -32,7 +36,11 @@ const settings = {
     }
     isGenerating = true;
 
-    const newGround = await generateGround(300, 120, settings);
+    const newGround = await generateGround(
+      MAP_WIDTH_TILES,
+      MAP_HEIGHT_TILES,
+      settings,
+    );
 
     if (currentGround) {
       worldContainer.removeChild(currentGround);
@@ -49,6 +57,10 @@ const settings = {
   };
 
   await updateMap();
-  enablePanning(app, worldContainer);
+  const totalMapWidth = MAP_WIDTH_TILES * TILE_SIZE;
+  const totalMapHeight = MAP_HEIGHT_TILES * TILE_SIZE;
+  enablePanning(app, worldContainer, totalMapWidth, totalMapHeight);
   createControls(container, settings, updateMap);
+
+  app.ticker.add(() => {});
 })();
