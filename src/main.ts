@@ -1,7 +1,8 @@
-import { Application, Container, Sprite, Graphics } from "pixi.js";
+import { Application, Container } from "pixi.js";
 import { generateGround } from "./ground/ground";
 import { createControls } from "./create-controls";
 import { enablePanning } from "./utils/enable-panning";
+import { createMinimap } from "./utils/create-minimap";
 
 const TILE_SIZE = 16;
 const MAP_WIDTH_TILES = 300;
@@ -23,15 +24,20 @@ const settings = {
   container.appendChild(app.canvas);
 
   const worldContainer = new Container();
-  app.stage.addChild(worldContainer);
-
   const uiContainer = new Container();
+
+  app.stage.addChild(worldContainer);
   app.stage.addChild(uiContainer);
 
-  let currentGround: Container | null = null;
-  let minimapSprite: Sprite | null = null;
-  let viewportRect: Graphics | null = null; // The red box on minimap
+  const minimap = createMinimap(
+    app,
+    uiContainer,
+    MAP_WIDTH_TILES,
+    MAP_HEIGHT_TILES,
+    TILE_SIZE,
+  );
 
+  let currentGround: Container | null = null;
   let isGenerating = false;
   let pendingUpdate = false;
 
@@ -55,23 +61,7 @@ const settings = {
     currentGround = newGround;
     worldContainer.addChild(currentGround);
 
-    if (!minimapSprite) {
-      minimapSprite = new Sprite();
-      minimapSprite.x = app.screen.width - MAP_WIDTH_TILES - 20;
-      minimapSprite.y = app.screen.height - MAP_HEIGHT_TILES - 20;
-
-      const border = new Graphics();
-      border.rect(0, 0, MAP_WIDTH_TILES, MAP_HEIGHT_TILES);
-      border.stroke({ width: 2, color: 0xffffff });
-      minimapSprite.addChild(border);
-
-      viewportRect = new Graphics();
-      minimapSprite.addChild(viewportRect);
-
-      uiContainer.addChild(minimapSprite);
-    }
-
-    minimapSprite.texture = minimapTexture;
+    minimap.updateTexture(minimapTexture);
 
     isGenerating = false;
     if (pendingUpdate) {
@@ -88,21 +78,6 @@ const settings = {
   createControls(container, settings, updateMap);
 
   app.ticker.add(() => {
-    if (!minimapSprite || !viewportRect) return;
-
-    // Calculate Ratio (Minimap Size / Real World Size)
-    const ratio = 1 / TILE_SIZE;
-
-    // Calculate Position
-    const rectX = -worldContainer.x * ratio;
-    const rectY = -worldContainer.y * ratio;
-
-    // Calculate Size
-    const rectW = app.screen.width * ratio;
-    const rectH = app.screen.height * ratio;
-
-    viewportRect.clear();
-    viewportRect.rect(rectX, rectY, rectW, rectH);
-    viewportRect.stroke({ width: 1, color: 0xff0000 }); // Red line
+    minimap.updateViewport(worldContainer);
   });
 })();
