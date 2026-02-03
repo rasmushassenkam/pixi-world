@@ -7,8 +7,8 @@ export const generateGround = async (
   width = 300,
   height = 120,
   settings = {
-    scale: 10,
-    octaves: 1,
+    scale: 20,
+    octaves: 3,
     persistence: 0.5,
     exponent: 1.0,
     seed: "my-seed",
@@ -22,11 +22,13 @@ export const generateGround = async (
     frameWidth: 16,
   });
 
-  // Create the RNG based on the seed
   const rng = seedrandom(settings.seed);
   const noise2D = createNoise2D(rng);
 
   const mapContainer = new Container();
+
+  // Define the "Water Level" - anything below this is Shore, above is Grass
+  const WATER_LEVEL = 0.5;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -40,7 +42,6 @@ export const generateGround = async (
       for (let i = 0; i < settings.octaves; i++) {
         elevation += noise2D(x * frequency, y * frequency) * amplitude;
         maxAmplitude += amplitude;
-
         // Decrease amplitude for next layer (persistence)
         amplitude *= settings.persistence;
         // Increase frequency for next layer
@@ -50,26 +51,41 @@ export const generateGround = async (
       // NORMALIZATION
       // Convert raw noise (approx -maxAmp to +maxAmp) to range 0.0 to 1.0
       elevation = (elevation / maxAmplitude + 1) / 2;
-
       // REDISTRIBUTION
       // Apply power function to push values closer to 0 or 1
       elevation = Math.pow(elevation, settings.exponent);
 
       let texture;
 
-      if (elevation < 0.15) {
-        texture = shoreTextures[`shore_0`]; // Deep Water
-      } else if (elevation < 0.4) {
-        // Map 0.15-0.4 to shore textures
-        const index = Math.floor(((elevation - 0.15) / 0.25) * 4);
-        // Clamp index to prevent potential array overflow
-        const safeIndex = Math.max(0, Math.min(3, index));
-        texture = shoreTextures[`shore_${safeIndex}`];
+      if (elevation < WATER_LEVEL) {
+        // --- SHORE LOGIC ---
+        // Map 0.0 (Deep) -> WATER_LEVEL (Coast)
+        // To Indices: 4 (Abyss) -> 0 (Sand)
+
+        // Calculate how "deep" we are (0.0 = At coast, 1.0 = Deepest abyss)
+        const depth = 1 - elevation / WATER_LEVEL;
+
+        // Map depth to indices 0-4
+        let shoreIdx = Math.floor(depth * 5);
+
+        // Clamp to ensure we stay within 0-4 range
+        shoreIdx = Math.max(0, Math.min(4, shoreIdx));
+
+        texture = shoreTextures[`shore_${shoreIdx}`];
       } else {
-        // Map 0.4-1.0 to grass textures
-        const index = Math.min(2, Math.floor(((elevation - 0.4) / 0.6) * 3));
-        const safeIndex = Math.max(0, index);
-        texture = grassTextures[`grass_${safeIndex}`];
+        // --- GRASS LOGIC ---
+        // Map WATER_LEVEL (Coast) -> 1.0 (Mountain)
+        // To Indices: 1 (Light Grass) -> 2 (Dark Grass)
+        // Note: We skip Index 0 because you said it's "Water"
+
+        // Normalized land height (0.0 = Just on coast, 1.0 = High peak)
+        const landHeight = (elevation - WATER_LEVEL) / (1 - WATER_LEVEL);
+
+        // If low land (e.g., < 50% of land height), use Light Grass (1)
+        // If high land, use Dark Grass (2)
+        const grassIdx = landHeight < 0.5 ? 1 : 2;
+
+        texture = grassTextures[`grass_${grassIdx}`];
       }
 
       const sprite = new Sprite(texture);
