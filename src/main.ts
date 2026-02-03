@@ -1,6 +1,7 @@
 import { Application, Container } from "pixi.js";
 import { generateGround } from "./ground/ground";
 import { createControls } from "./create-controls";
+import { enablePanning } from "./utils/enable-panning";
 
 const settings = {
   scale: 20,
@@ -48,43 +49,6 @@ const settings = {
   };
 
   await updateMap();
-  app.ticker.add(() => {});
-
-  app.stage.eventMode = "static";
-
-  app.stage.hitArea = app.screen;
-
-  let isDragging = false;
-  let startX = 0;
-  let startY = 0;
-  let containerStartX = 0;
-  let containerStartY = 0;
-
-  app.stage.on("pointerdown", (e) => {
-    isDragging = true;
-    startX = e.global.x;
-    startY = e.global.y;
-    containerStartX = worldContainer.x;
-    containerStartY = worldContainer.y;
-
-    app.canvas.style.cursor = "grabbing";
-  });
-
-  app.stage.on("pointermove", (e) => {
-    if (!isDragging) return;
-    const dx = e.global.x - startX;
-    const dy = e.global.y - startY;
-    worldContainer.x = containerStartX + dx;
-    worldContainer.y = containerStartY + dy;
-  });
-
-  const onDragEnd = () => {
-    isDragging = false;
-    app.canvas.style.cursor = "default";
-  };
-
-  app.stage.on("pointerup", onDragEnd);
-  app.stage.on("pointerupoutside", onDragEnd);
-
+  enablePanning(app, worldContainer);
   createControls(container, settings, updateMap);
 })();
