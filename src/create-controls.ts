@@ -7,75 +7,58 @@ export const createControls = (
 ) => {
   // Main UI Container
   const ui = document.createElement("div");
+  ui.className = "window";
   Object.assign(ui.style, {
     position: "absolute",
     top: "10px",
     right: "10px",
-    padding: "10px",
-    background: "rgba(255, 255, 255, 0.95)",
-    borderRadius: "8px",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-    fontFamily: "sans-serif",
-    fontSize: "14px",
-    width: "220px",
+    width: "250px",
+    zIndex: "1000",
   });
 
-  // Header (Title + Toggle Button)
-  const header = document.createElement("div");
-  Object.assign(header.style, {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "10px",
-    cursor: "pointer",
-  });
+  // Header
+  const titleBar = document.createElement("div");
+  titleBar.className = "title-bar";
 
-  const title = document.createElement("span");
-  title.innerText = "Terrain Settings";
-  title.style.fontWeight = "bold";
-  title.style.color = "#333";
+  const titleText = document.createElement("div");
+  titleText.className = "title-bar-text";
+  titleText.innerText = "Terrain Generator";
 
-  const toggleBtn = document.createElement("button");
-  toggleBtn.innerText = "−";
-  Object.assign(toggleBtn.style, {
-    background: "transparent",
-    border: "none",
-    fontSize: "18px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    color: "#333",
-    padding: "0 5px",
-  });
+  const titleControls = document.createElement("div");
+  titleControls.className = "title-bar-controls";
 
-  header.appendChild(title);
-  header.appendChild(toggleBtn);
-  ui.appendChild(header);
+  const minBtn = document.createElement("button");
+  minBtn.setAttribute("aria-label", "Minimize");
 
-  // Content Wrapper
-  const content = document.createElement("div");
-  content.style.display = "block"; // Visible by default
+  titleControls.appendChild(minBtn);
+  titleBar.appendChild(titleText);
+  titleBar.appendChild(titleControls);
+  ui.appendChild(titleBar);
+
+  const body = document.createElement("div");
+  body.className = "window-body";
 
   let isMinimized = false;
+
   const toggleMinimize = () => {
     isMinimized = !isMinimized;
     if (isMinimized) {
-      content.style.display = "none";
-      toggleBtn.innerText = "+";
-      header.style.marginBottom = "0px"; // Remove margin when closed
+      body.style.display = "none";
+      minBtn.setAttribute("aria-label", "Restore");
     } else {
-      content.style.display = "block";
-      toggleBtn.innerText = "−";
-      header.style.marginBottom = "10px";
+      body.style.display = "block";
+      minBtn.setAttribute("aria-label", "Minimize");
     }
   };
 
-  toggleBtn.onclick = (e) => {
+  minBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleMinimize();
-  };
-  title.onclick = toggleMinimize;
+  });
 
-  // Debounce helper
+  // Double-click title bar to minimize
+  titleBar.ondblclick = toggleMinimize;
+
   let timeout: number;
   const debouncedUpdate = () => {
     clearTimeout(timeout);
@@ -89,23 +72,13 @@ export const createControls = (
     max: number,
     step: number,
   ) => {
-    const wrapper = document.createElement("div");
-    wrapper.style.marginBottom = "10px";
+    const row = document.createElement("div");
+    row.className = "field-row";
+    row.style.marginBottom = "5px";
 
-    const labelEl = document.createElement("div");
-    labelEl.style.marginBottom = "4px";
-    labelEl.style.display = "flex";
-    labelEl.style.justifyContent = "space-between";
-    labelEl.style.color = "#333333";
-
-    const nameSpan = document.createElement("span");
-    nameSpan.innerText = label;
-    const valueSpan = document.createElement("span");
-    valueSpan.innerText = String(data[key]);
-    valueSpan.style.fontWeight = "bold";
-
-    labelEl.appendChild(nameSpan);
-    labelEl.appendChild(valueSpan);
+    const labelEl = document.createElement("label");
+    labelEl.innerText = label;
+    labelEl.style.width = "120px";
 
     const input = document.createElement("input");
     input.type = "range";
@@ -113,45 +86,49 @@ export const createControls = (
     input.max = String(max);
     input.step = String(step);
     input.value = String(data[key]);
-    input.style.width = "100%";
+    input.style.flexGrow = "1";
+
+    const valLabel = document.createElement("label");
+    valLabel.innerText = String(data[key]);
+    valLabel.style.width = "30px";
+    valLabel.style.textAlign = "right";
 
     input.addEventListener("input", (e) => {
       const val = parseFloat((e.target as HTMLInputElement).value);
       // @ts-expect-error: simplistic type mapping
       data[key] = val;
-      valueSpan.innerText = String(val);
+      valLabel.innerText = String(val);
       debouncedUpdate();
     });
 
-    wrapper.appendChild(labelEl);
-    wrapper.appendChild(input);
-    content.appendChild(wrapper);
+    row.appendChild(labelEl);
+    row.appendChild(input);
+    row.appendChild(valLabel);
+    body.appendChild(row);
   };
 
-  addSlider("Scale (Zoom)", "scale", 5, 100, 1);
-  addSlider("Octaves (Detail)", "octaves", 1, 6, 1);
+  addSlider("Scale", "scale", 5, 100, 1);
+  addSlider("Octaves", "octaves", 1, 6, 1);
   addSlider("Persistence", "persistence", 0.1, 1.0, 0.1);
-  addSlider("Exponent (Water Level)", "exponent", 0.1, 4.0, 0.1);
+  addSlider("Water Level", "exponent", 0.1, 4.0, 0.1);
+
+  const hr = document.createElement("hr");
+  body.appendChild(hr);
+
+  const btnWrapper = document.createElement("div");
+  btnWrapper.className = "field-row";
+  btnWrapper.style.justifyContent = "center";
 
   const btn = document.createElement("button");
   btn.innerText = "Randomize Seed";
-  Object.assign(btn.style, {
-    width: "100%",
-    padding: "8px",
-    marginTop: "5px",
-    cursor: "pointer",
-    background: "#333",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-  });
-
-  btn.addEventListener("click", () => {
+  btn.onclick = () => {
     data.seed = Math.random().toString(36).substring(7);
     onUpdate();
-  });
+  };
 
-  content.appendChild(btn);
-  ui.appendChild(content);
+  btnWrapper.appendChild(btn);
+  body.appendChild(btnWrapper);
+
+  ui.appendChild(body);
   parentElement.appendChild(ui);
 };
