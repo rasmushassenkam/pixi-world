@@ -1,7 +1,7 @@
 import { Application, Container } from "pixi.js";
 import { generateGround, GroundSettings } from "../ground/ground";
 import { enablePanning } from "../utils/enable-panning";
-import { createMinimap } from "../utils/create-minimap";
+import { CanvasMinimap } from "../utils/canvas-minimap";
 
 const TILE_SIZE = 16;
 const MAP_WIDTH = 480;
@@ -11,7 +11,9 @@ export class GameApp {
   private app: Application;
   private world: Container = new Container();
   private uiLayer: Container = new Container();
-  private minimap: ReturnType<typeof createMinimap> | null = null;
+  private minimap: CanvasMinimap | null = null;
+  private currentMinimapSource: HTMLCanvasElement | null = null;
+
   private currentGround: Container | null = null;
 
   // State locks to prevent crashing if sliders are dragged too fast
@@ -37,13 +39,23 @@ export class GameApp {
         MAP_HEIGHT * TILE_SIZE,
       );
 
-      this.minimap = createMinimap(this.app, this.uiLayer, TILE_SIZE);
-
-      // Sync Minimap Viewport
       this.app.ticker.add(() => {
-        if (this.minimap) this.minimap.updateViewport(this.world);
+        if (this.minimap) {
+          this.minimap.update(
+            this.world,
+            this.app.screen.width,
+            this.app.screen.height,
+          );
+        }
       });
     });
+  }
+
+  public attachMinimap(canvas: HTMLCanvasElement) {
+    this.minimap = new CanvasMinimap(canvas, TILE_SIZE);
+    if (this.currentMinimapSource) {
+      this.minimap.setMapImage(this.currentMinimapSource);
+    }
   }
 
   public async updateSettings(settings: GroundSettings) {
@@ -53,7 +65,7 @@ export class GameApp {
     }
     this.isGenerating = true;
 
-    const { container, minimapTexture } = await generateGround(
+    const { container, minimapCanvas } = await generateGround(
       MAP_WIDTH,
       MAP_HEIGHT,
       settings,
@@ -65,9 +77,10 @@ export class GameApp {
     }
     this.currentGround = container;
     this.world.addChild(container);
+    this.currentMinimapSource = minimapCanvas;
 
     if (this.minimap) {
-      this.minimap.updateTexture(minimapTexture);
+      this.minimap.setMapImage(minimapCanvas);
     }
 
     this.isGenerating = false;

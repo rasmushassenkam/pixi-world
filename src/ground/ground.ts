@@ -85,7 +85,7 @@ const createMinimapBuffer = (width: number, height: number) => {
     return Texture.from(canvas);
   };
 
-  return { setPixel, getTexture };
+  return { setPixel, getTexture, canvas };
 };
 
 export const generateGround = async (
@@ -136,5 +136,6 @@ export const generateGround = async (
   return {
     container: mapContainer,
     minimapTexture: minimap.getTexture(),
+    minimapCanvas: minimap.canvas,
   };
 };
