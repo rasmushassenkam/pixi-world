@@ -8,7 +8,7 @@ A fantasy life simulation, with windows 98 ui, built with pixi.js.
     * **Map Styles:** Configurable generation masks (Continent, Island, Coast, Standard).
 * **Navigation:**  
     * **Panning:** Drag-to-move camera controls.
-    * **Minimap:** Real-time, map with a synchronized viewport indicator.
+    * **Minimap:** Real-time, map with a synchronized viewport indicator and **click-to-teleport** navigation.
 
 ## Tech Stack
 

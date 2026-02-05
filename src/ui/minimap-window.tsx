@@ -1,4 +1,4 @@
-import { useCallback } from "react"; // Changed imports
+import { MouseEvent, useCallback } from "react"; // Changed imports
 import { GameApp } from "../game/app";
 import { ControlWindow } from "./control-window";
 
@@ -16,6 +16,20 @@ export const MinimapWindow = ({ game }: Props) => {
     [game],
   );
 
+  const handleMapClick = (e: MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    // Calculate Click Position relative to the element
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Convert to Percentage (0.0 to 1.0)
+    const relativeX = x / rect.width;
+    const relativeY = y / rect.height;
+
+    game.teleportTo(relativeX, relativeY);
+  };
+
   return (
     <ControlWindow
       headerLabel="World Map"
@@ -25,6 +39,7 @@ export const MinimapWindow = ({ game }: Props) => {
         ref={setCanvasRef}
         width={200}
         height={150}
+        onClick={handleMapClick}
         style={{
           display: "block",
           width: "100%",

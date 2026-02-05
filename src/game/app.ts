@@ -92,6 +92,26 @@ export class GameApp {
     }
   }
 
+  public teleportTo(relativeX: number, relativeY: number) {
+    // Calculate the target coordinates in World Pixels
+    const targetX = relativeX * (MAP_WIDTH * TILE_SIZE);
+    const targetY = relativeY * (MAP_HEIGHT * TILE_SIZE);
+
+    // Center the Camera
+    let newX = this.app.screen.width / 2 - targetX;
+    let newY = this.app.screen.height / 2 - targetY;
+
+    const minX = this.app.screen.width - MAP_WIDTH * TILE_SIZE;
+    const minY = this.app.screen.height - MAP_HEIGHT * TILE_SIZE;
+
+    // Clamp X (Between 'minX' and '0')
+    newX = Math.max(minX, Math.min(0, newX));
+    // Clamp Y (Between 'minY' and '0')
+    newY = Math.max(minY, Math.min(0, newY));
+
+    this.world.position.set(newX, newY);
+  }
+
   public destroy() {
     this.app.destroy({ removeView: true }, { children: true });
   }
