@@ -1,7 +1,9 @@
 import { Container, Sprite, Texture } from "pixi.js";
-import { createNoise2D, NoiseFunction2D } from "simplex-noise";
+import { createNoise2D } from "simplex-noise";
 import seedrandom from "seedrandom";
 import { getSpritesheet } from "../utils/get-spritesheet";
+
+export type MapStyle = "standard" | "continent" | "island" | "coast";
 
 export type GroundSettings = {
   scale: number;
@@ -9,6 +11,7 @@ export type GroundSettings = {
   persistence: number;
   exponent: number;
   seed: string;
+  style: MapStyle;
 };
 
 const BIOME_COLORS: [number, number, number][] = [
@@ -24,28 +27,37 @@ const BIOME_COLORS: [number, number, number][] = [
   [0xe3, 0xe8, 0xe6], // 9: Snow Peak
 ];
 
-const MAX_LEVEL = 9;
-
-const getElevation = (
+const applyMask = (
+  elevation: number,
   x: number,
   y: number,
-  noise2D: NoiseFunction2D,
-  settings: GroundSettings,
+  width: number,
+  height: number,
+  style: MapStyle,
 ): number => {
-  let elevation = 0;
-  let amplitude = 1;
-  let frequency = 1 / settings.scale;
-  let maxAmplitude = 0;
+  const nx = (x / width) * 2 - 1;
+  const ny = (y / height) * 2 - 1;
 
-  for (let i = 0; i < settings.octaves; i++) {
-    elevation += noise2D(x * frequency, y * frequency) * amplitude;
-    maxAmplitude += amplitude;
-    amplitude *= settings.persistence;
-    frequency *= 2;
+  let mask = 0;
+
+  switch (style) {
+    case "standard":
+      return elevation;
+    case "continent": {
+      const dist = Math.sqrt(nx * nx + ny * ny);
+      mask = 1 - Math.pow(dist, 1.5);
+      break;
+    }
+    case "island": {
+      const d = Math.sqrt(nx * nx + ny * ny);
+      mask = 1 - Math.pow(d, 0.8) * 1.5;
+      break;
+    }
+    case "coast":
+      mask = (1 - nx) / 2;
+      break;
   }
-
-  elevation = (elevation / maxAmplitude + 1) / 2;
-  return Math.pow(elevation, settings.exponent);
+  return Math.max(0, Math.min(1, (elevation + mask) / 2));
 };
 
 const createMinimapBuffer = (width: number, height: number) => {
@@ -89,14 +101,27 @@ export const generateGround = async (
   const noise2D = createNoise2D(rng);
   const mapContainer = new Container();
   const minimap = createMinimapBuffer(width, height);
+  const frequencyBase = 1 / settings.scale;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const elevation = getElevation(x, y, noise2D, settings);
+      let elevation = 0;
+      let amplitude = 1;
+      let frequency = frequencyBase;
+      let maxAmplitude = 0;
 
-      let tileIdx = Math.floor(elevation * (MAX_LEVEL + 1));
+      for (let i = 0; i < settings.octaves; i++) {
+        elevation += noise2D(x * frequency, y * frequency) * amplitude;
+        maxAmplitude += amplitude;
+        amplitude *= settings.persistence;
+        frequency *= 2;
+      }
+      elevation = (elevation / maxAmplitude + 1) / 2;
+      elevation = applyMask(elevation, x, y, width, height, settings.style);
+      elevation = Math.pow(elevation, settings.exponent);
 
-      tileIdx = Math.max(0, Math.min(MAX_LEVEL, tileIdx));
+      let tileIdx = Math.floor(elevation * 10);
+      tileIdx = Math.max(0, Math.min(9, tileIdx));
 
       const texture = groundTextures[`ground_${tileIdx}`];
       const sprite = new Sprite(texture);

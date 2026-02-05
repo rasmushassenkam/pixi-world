@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { GroundSettings } from "../../ground/ground";
+import { GroundSettings, MapStyle } from "../../ground/ground";
 import { debounce } from "../../utils/debounce";
 import { Slider } from "./slider";
 import { ControlWindow } from "../control-window";
@@ -14,6 +14,7 @@ export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
     octaves: 3,
     persistence: 0.5,
     exponent: 1.0,
+    style: "standard",
     seed: "my-seed",
   });
 
@@ -34,6 +35,19 @@ export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
       headerLabel="Terrain Generator"
       style={{ position: "absolute", top: 10, right: 10, width: 250 }}
     >
+      <div className="field-row" style={{ marginBottom: 10 }}>
+        <label style={{ width: 80, color: "#333333" }}>Map Style</label>
+        <select
+          value={settings.style}
+          onChange={(e) => handleChange("style", e.target.value as MapStyle)}
+          style={{ flexGrow: 1 }}
+        >
+          <option value="standard">Infinite (Standard)</option>
+          <option value="continent">Continent</option>
+          <option value="island">Small Island</option>
+          <option value="coast">Coastal View</option>
+        </select>
+      </div>
       <Slider
         label="Scale"
         value={settings.scale}
@@ -66,7 +80,6 @@ export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
         step={0.1}
         onChange={(v) => handleChange("exponent", v)}
       />
-
       <div
         className="field-row"
         style={{ justifyContent: "center", marginTop: 10 }}
