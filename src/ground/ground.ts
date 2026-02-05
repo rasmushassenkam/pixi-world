@@ -11,12 +11,20 @@ export type GroundSettings = {
   seed: string;
 };
 
-type BiomeData = {
-  texture: Texture;
-  color: [number, number, number]; // RGB for minimap
-};
+const BIOME_COLORS: [number, number, number][] = [
+  [0x42, 0xac, 0xaf], // 0: Abyss
+  [0x4e, 0xbc, 0xb9], // 1: Deep Ocean
+  [0x77, 0xc0, 0xb4], // 2: Ocean
+  [0xb1, 0xc9, 0xa7], // 3: Shallow/Foam
+  [0xe7, 0xd5, 0x93], // 4: Sand
+  [0xc3, 0xd6, 0x57], // 5: Meadow
+  [0xb1, 0xd3, 0x54], // 6: Light Grass
+  [0x69, 0xa3, 0x48], // 7: Dense Forest
+  [0x7e, 0x79, 0x66], // 8: Mountain Rock
+  [0xe3, 0xe8, 0xe6], // 9: Snow Peak
+];
 
-type TextureSet = Record<string, Texture>;
+const MAX_LEVEL = 9;
 
 const getElevation = (
   x: number,
@@ -38,58 +46,6 @@ const getElevation = (
 
   elevation = (elevation / maxAmplitude + 1) / 2;
   return Math.pow(elevation, settings.exponent);
-};
-
-const WATER_LEVEL = 0.5;
-
-const getBiomeDetails = (
-  elevation: number,
-  shoreTextures: TextureSet,
-  grassTextures: TextureSet,
-): BiomeData => {
-  // --- WATER / SHORE ---
-  if (elevation < WATER_LEVEL) {
-    const depth = 1 - elevation / WATER_LEVEL;
-    // Map depth (0.0-1.0) to indices 0-4.
-    // 0 is Coast (Sand), 4 is Abyss.
-    const shoreIdx = Math.max(0, Math.min(4, Math.floor(depth * 5)));
-    const texture = shoreTextures[`shore_${shoreIdx}`];
-
-    // Colors: Deep Blue -> Cyan -> Sand
-    let color: [number, number, number];
-    switch (shoreIdx) {
-      case 4:
-        color = [20, 20, 80];
-        break; // Abyss
-      case 3:
-        color = [40, 60, 150];
-        break; // Deep
-      case 2:
-        color = [60, 100, 200];
-        break; // Water
-      case 1:
-        color = [100, 180, 240];
-        break; // Shallow
-      default:
-        color = [210, 200, 130];
-        break; // Sand (0)
-    }
-
-    return { texture, color };
-  }
-
-  // --- LAND / GRASS ---
-  else {
-    const landHeight = (elevation - WATER_LEVEL) / (1 - WATER_LEVEL);
-    const grassIdx = landHeight < 0.5 ? 1 : 2;
-    const texture = grassTextures[`grass_${grassIdx}`];
-
-    // Colors: Light Green -> Dark Green
-    const color: [number, number, number] =
-      grassIdx === 1 ? [100, 180, 80] : [40, 100, 40];
-
-    return { texture, color };
-  }
 };
 
 const createMinimapBuffer = (width: number, height: number) => {
@@ -125,10 +81,9 @@ export const generateGround = async (
   height = 120,
   settings: GroundSettings,
 ) => {
-  const [shoreTextures, grassTextures] = await Promise.all([
-    getSpritesheet("/assets/shore.png", "shore", { frameWidth: 16 }),
-    getSpritesheet("/assets/grass.png", "grass", { frameWidth: 16 }),
-  ]);
+  const groundTextures = await getSpritesheet("/assets/ground.png", "ground", {
+    frameWidth: 16,
+  });
 
   const rng = seedrandom(settings.seed);
   const noise2D = createNoise2D(rng);
@@ -139,18 +94,17 @@ export const generateGround = async (
     for (let x = 0; x < width; x++) {
       const elevation = getElevation(x, y, noise2D, settings);
 
-      const { texture, color } = getBiomeDetails(
-        elevation,
-        shoreTextures,
-        grassTextures,
-      );
+      let tileIdx = Math.floor(elevation * (MAX_LEVEL + 1));
 
+      tileIdx = Math.max(0, Math.min(MAX_LEVEL, tileIdx));
+
+      const texture = groundTextures[`ground_${tileIdx}`];
       const sprite = new Sprite(texture);
       sprite.x = x * 16;
       sprite.y = y * 16;
       mapContainer.addChild(sprite);
 
-      minimap.setPixel(x, y, color);
+      minimap.setPixel(x, y, BIOME_COLORS[tileIdx]);
     }
   }
 
