@@ -3,6 +3,8 @@ import { GroundSettings, MapStyle } from "../../ground/ground";
 import { debounce } from "../../utils/debounce";
 import { Slider } from "./slider";
 import { ControlWindow } from "../control-window";
+import { Select } from "./select/select";
+import { Option } from "./select/option";
 
 type Props = {
   onUpdate: (settings: GroundSettings) => void;
@@ -35,19 +37,16 @@ export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
       headerLabel="Terrain Generator"
       style={{ position: "absolute", top: 10, right: 10, width: 250 }}
     >
-      <div className="field-row" style={{ marginBottom: 10 }}>
-        <label style={{ width: 80, color: "#333333" }}>Map Style</label>
-        <select
-          value={settings.style}
-          onChange={(e) => handleChange("style", e.target.value as MapStyle)}
-          style={{ flexGrow: 1 }}
-        >
-          <option value="standard">Infinite (Standard)</option>
-          <option value="continent">Continent</option>
-          <option value="island">Small Island</option>
-          <option value="coast">Coastal View</option>
-        </select>
-      </div>
+      <Select<MapStyle>
+        label="Map Style"
+        value={settings.style}
+        onChange={(val) => handleChange("style", val)}
+      >
+        <Option value="standard">Infinite (Standard)</Option>
+        <Option value="continent">Continent</Option>
+        <Option value="island">Small Island</Option>
+        <Option value="coast">Coastal View</Option>
+      </Select>
       <Slider
         label="Scale"
         value={settings.scale}
