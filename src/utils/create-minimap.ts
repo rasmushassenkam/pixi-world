@@ -1,29 +1,42 @@
 import { Application, Container, Graphics, Sprite, Texture } from "pixi.js";
 
+const TARGET_WIDTH = 200;
+const PADDING = 20;
+
 export const createMinimap = (
   app: Application,
   parent: Container,
-  width: number,
-  height: number,
   tileSize: number,
 ) => {
   const sprite = new Sprite();
 
-  sprite.x = app.screen.width - width - 20;
-  sprite.y = app.screen.height - height - 20;
-
   const border = new Graphics();
-  border.rect(0, 0, width, height);
-  border.stroke({ width: 2, color: 0xffffff });
-  sprite.addChild(border);
-
   const viewportRect = new Graphics();
-  sprite.addChild(viewportRect);
 
+  sprite.addChild(border);
+  sprite.addChild(viewportRect);
   parent.addChild(sprite);
+
+  // Align the minimap to the bottom-right of the screen
+  const updatePosition = () => {
+    sprite.x = app.screen.width - sprite.width - PADDING;
+    sprite.y = app.screen.height - sprite.height - PADDING;
+  };
 
   const updateTexture = (texture: Texture) => {
     sprite.texture = texture;
+
+    // Calculate Scale
+    const scale = TARGET_WIDTH / texture.width;
+    sprite.scale.set(scale);
+
+    // Redraw Border
+    border.clear();
+    border.rect(0, 0, texture.width, texture.height);
+    border.stroke({ width: 2 / scale, color: 0xffffff });
+
+    // Re-anchor to bottom right
+    updatePosition();
   };
 
   const updateViewport = (worldContainer: Container) => {
@@ -41,8 +54,11 @@ export const createMinimap = (
 
     viewportRect.clear();
     viewportRect.rect(rectX, rectY, rectW, rectH);
-    viewportRect.stroke({ width: 1, color: 0xff0000 });
+
+    const currentScale = sprite.scale.x || 1;
+    viewportRect.stroke({ width: 1 / currentScale, color: 0xff0000 });
   };
+  app.renderer.on("resize", updatePosition);
 
   return { updateTexture, updateViewport };
 };

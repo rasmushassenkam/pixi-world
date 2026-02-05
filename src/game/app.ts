@@ -4,8 +4,8 @@ import { enablePanning } from "../utils/enable-panning";
 import { createMinimap } from "../utils/create-minimap";
 
 const TILE_SIZE = 16;
-const MAP_WIDTH = 300;
-const MAP_HEIGHT = 240;
+const MAP_WIDTH = 480;
+const MAP_HEIGHT = 300;
 
 export class GameApp {
   private app: Application;
@@ -37,13 +37,7 @@ export class GameApp {
         MAP_HEIGHT * TILE_SIZE,
       );
 
-      this.minimap = createMinimap(
-        this.app,
-        this.uiLayer,
-        MAP_WIDTH,
-        MAP_HEIGHT,
-        TILE_SIZE,
-      );
+      this.minimap = createMinimap(this.app, this.uiLayer, TILE_SIZE);
 
       // Sync Minimap Viewport
       this.app.ticker.add(() => {
