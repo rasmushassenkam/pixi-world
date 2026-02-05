@@ -10,6 +10,10 @@ A fantasy life simulation, with windows 98 ui, built with pixi.js.
     * **Panning:** Drag-to-move camera controls.
     * **Minimap:** Real-time, map with a synchronized viewport indicator and **click-to-teleport** navigation.
 
+## TODOS
+
+> [Planned features and roadmap](./TODOS.md)
+
 ## Tech Stack
 
 * **Engine:** [PixiJS](https://pixijs.com/)
