@@ -5,6 +5,7 @@ A fantasy life simulation, with windows 98 ui, built with pixi.js.
 ## Features
 
 * **Procedural World Building:** Simplex noise map generation.
+    * **Map Styles:** Configurable generation masks (Continent, Island, Coast, Standard).
 * **Navigation:**  
     * **Panning:** Drag-to-move camera controls.
     * **Minimap:** Real-time, map with a synchronized viewport indicator.
