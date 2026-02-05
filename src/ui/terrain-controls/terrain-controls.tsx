@@ -6,17 +6,41 @@ import { ControlWindow } from "../control-window";
 import { Select } from "./select/select";
 import { Option } from "./select/option";
 
+const STYLE_OPTIONS: Record<MapStyle, string> = {
+  standard: "Infinite (Standard)",
+  continent: "Continent",
+  island: "Small Island",
+  coast: "Coastal View",
+};
+
+type SliderConfig = {
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+};
+
+const SLIDER_CONFIGS: Record<
+  Exclude<keyof GroundSettings, "style" | "seed">,
+  SliderConfig
+> = {
+  scale: { label: "Scale", min: 30, max: 400, step: 10 },
+  octaves: { label: "Octaves", min: 1, max: 6, step: 1 },
+  persistence: { label: "Persistence", min: 0.1, max: 1.0, step: 0.1 },
+  exponent: { label: "Water Level", min: 0.1, max: 4.0, step: 0.1 },
+};
+
 type Props = {
   onUpdate: (settings: GroundSettings) => void;
 };
 
 export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
   const [settings, setSettings] = useState<GroundSettings>({
-    scale: 20,
-    octaves: 3,
+    scale: 150,
+    octaves: 4,
     persistence: 0.5,
     exponent: 1.0,
-    style: "standard",
+    style: "continent",
     seed: "my-seed",
   });
 
@@ -42,43 +66,30 @@ export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
         value={settings.style}
         onChange={(val) => handleChange("style", val)}
       >
-        <Option value="standard">Infinite (Standard)</Option>
-        <Option value="continent">Continent</Option>
-        <Option value="island">Small Island</Option>
-        <Option value="coast">Coastal View</Option>
+        {(Object.entries(STYLE_OPTIONS) as [MapStyle, string][]).map(
+          ([val, label]) => (
+            <Option key={val} value={val}>
+              {label}
+            </Option>
+          ),
+        )}
       </Select>
-      <Slider
-        label="Scale"
-        value={settings.scale}
-        min={5}
-        max={100}
-        step={1}
-        onChange={(v) => handleChange("scale", v)}
-      />
-      <Slider
-        label="Octaves"
-        value={settings.octaves}
-        min={1}
-        max={6}
-        step={1}
-        onChange={(v) => handleChange("octaves", v)}
-      />
-      <Slider
-        label="Persistence"
-        value={settings.persistence}
-        min={0.1}
-        max={1.0}
-        step={0.1}
-        onChange={(v) => handleChange("persistence", v)}
-      />
-      <Slider
-        label="Water Level"
-        value={settings.exponent}
-        min={0.1}
-        max={4.0}
-        step={0.1}
-        onChange={(v) => handleChange("exponent", v)}
-      />
+      {(
+        Object.entries(SLIDER_CONFIGS) as [
+          keyof typeof SLIDER_CONFIGS,
+          SliderConfig,
+        ][]
+      ).map(([key, config]) => (
+        <Slider
+          key={key}
+          label={config.label}
+          value={settings[key]}
+          min={config.min}
+          max={config.max}
+          step={config.step}
+          onChange={(v) => handleChange(key, v)}
+        />
+      ))}
       <div
         className="field-row"
         style={{ justifyContent: "center", marginTop: 10 }}

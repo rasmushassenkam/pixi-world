@@ -26,7 +26,6 @@ export class GameApp {
       parent.appendChild(this.app.canvas);
 
       // Layers
-
       this.app.stage.addChild(this.world);
       this.app.stage.addChild(this.uiLayer);
 
