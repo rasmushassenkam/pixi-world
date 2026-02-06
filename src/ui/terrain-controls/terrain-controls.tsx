@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { GroundSettings, MapStyle } from "../../ground/ground";
 import { debounce } from "../../utils/debounce";
 import { Slider } from "./slider";
-import { ControlWindow } from "../control-window";
+import { ControlWindow } from "../control-window/control-window";
 import { Select } from "./select/select";
 import { Option } from "./select/option";
 

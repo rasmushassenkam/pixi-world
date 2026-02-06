@@ -1,6 +1,6 @@
 import { MouseEvent, useCallback } from "react"; // Changed imports
 import { GameApp } from "../game/app";
-import { ControlWindow } from "./control-window";
+import { ControlWindow } from "./control-window/control-window";
 
 type Props = {
   game: GameApp;
