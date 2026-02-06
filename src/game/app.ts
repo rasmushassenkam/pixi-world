@@ -67,6 +67,11 @@ export class GameApp {
     this.minimap = new CanvasMinimap(canvas, TILE_SIZE);
     if (this.currentMinimapSource) {
       this.minimap.setMapImage(this.currentMinimapSource);
+      this.minimap.update(
+        this.world,
+        this.app.screen.width,
+        this.app.screen.height,
+      );
     }
   }
 
