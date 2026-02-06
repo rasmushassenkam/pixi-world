@@ -6,6 +6,17 @@ import { ControlWindow } from "../control-window/control-window";
 import { Select } from "./select/select";
 import { Option } from "./select/option";
 
+const STORAGE_KEY = "pixi-world-settings";
+
+const DEFAULT_SETTINGS: GroundSettings = {
+  scale: 150,
+  octaves: 4,
+  persistence: 0.5,
+  exponent: 1.0,
+  style: "continent",
+  seed: "my-seed",
+};
+
 const STYLE_OPTIONS: Record<MapStyle, string> = {
   standard: "Infinite (Standard)",
   continent: "Continent",
@@ -35,13 +46,9 @@ type Props = {
 };
 
 export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
-  const [settings, setSettings] = useState<GroundSettings>({
-    scale: 150,
-    octaves: 4,
-    persistence: 0.5,
-    exponent: 1.0,
-    style: "continent",
-    seed: "my-seed",
+  const [settings, setSettings] = useState<GroundSettings>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
 
   const debouncedUpdate = useMemo(() => debounce(onUpdate, 50), [onUpdate]);
@@ -53,6 +60,7 @@ export const TerrainControls: React.FC<Props> = ({ onUpdate }) => {
   const handleChange = (key: keyof GroundSettings, val: number | string) => {
     const newSettings = { ...settings, [key]: val };
     setSettings(newSettings);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     debouncedUpdate(newSettings);
   };
 
