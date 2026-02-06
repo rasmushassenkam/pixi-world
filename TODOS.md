@@ -28,4 +28,9 @@
 - [ ] Humans (!!)
 
 ## UI
-- [ ] Drag and drop control windows
+- [X] Drag and drop control windows
+- [ ] Panning when mouse is at screen edge
+
+## State
+- [ ] Loading screen on start/refresh
+- [ ] Persist state on refresh

@@ -9,6 +9,9 @@ A fantasy life simulation, with windows 98 ui, built with pixi.js.
 * **Navigation:**  
     * **Panning:** Drag-to-move camera controls.
     * **Minimap:** Real-time, map with a synchronized viewport indicator and **click-to-teleport** navigation.
+* **UI:**
+    * **Windows 98 Theme:** Styled with: [98.css](https://jdan.github.io/98.css/).
+    * **Window System:** Fully draggable and collapsible tool windows.
 
 ## TODOS
 

@@ -4,8 +4,8 @@ import { enablePanning } from "../utils/enable-panning";
 import { CanvasMinimap } from "../utils/canvas-minimap";
 
 const TILE_SIZE = 16;
-const MAP_WIDTH = 480;
-const MAP_HEIGHT = 300;
+const MAP_WIDTH = 600;
+const MAP_HEIGHT = 400;
 
 export class GameApp {
   private app: Application;
