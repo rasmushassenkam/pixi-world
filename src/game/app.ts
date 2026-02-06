@@ -1,4 +1,4 @@
-import { Application, Container } from "pixi.js";
+import { Application, Container, Sprite } from "pixi.js";
 import { generateGround, GroundSettings } from "../ground/ground";
 import { enablePanning } from "../utils/enable-panning";
 import { CanvasMinimap } from "../utils/canvas-minimap";
@@ -13,25 +13,24 @@ export class GameApp {
   private uiLayer: Container = new Container();
   private minimap: CanvasMinimap | null = null;
   private currentMinimapSource: HTMLCanvasElement | null = null;
-
-  private currentGround: Container | null = null;
+  private currentMapSprite: Sprite | null = null;
 
   // State locks to prevent crashing if sliders are dragged too fast
   private isGenerating = false;
   private pendingSettings: GroundSettings | null = null;
 
+  // Track last position to avoid redundant minimap updates
+  private lastWorldPos = { x: 0, y: 0, scale: 1 };
+
   constructor(parent: HTMLElement) {
     this.app = new Application();
 
-    // Initialize Pixi
     this.app.init({ background: "#1099bb", resizeTo: window }).then(() => {
       parent.appendChild(this.app.canvas);
 
-      // Layers
       this.app.stage.addChild(this.world);
       this.app.stage.addChild(this.uiLayer);
 
-      // Tools
       enablePanning(
         this.app,
         this.world,
@@ -40,12 +39,25 @@ export class GameApp {
       );
 
       this.app.ticker.add(() => {
-        if (this.minimap) {
+        if (!this.minimap) return;
+
+        // Check if the world has actually moved or scaled/zoomed
+        const hasMoved =
+          this.world.x !== this.lastWorldPos.x ||
+          this.world.y !== this.lastWorldPos.y ||
+          this.world.scale.x !== this.lastWorldPos.scale;
+
+        if (hasMoved) {
           this.minimap.update(
             this.world,
             this.app.screen.width,
             this.app.screen.height,
           );
+
+          // Update cache
+          this.lastWorldPos.x = this.world.x;
+          this.lastWorldPos.y = this.world.y;
+          this.lastWorldPos.scale = this.world.scale.x;
         }
       });
     });
@@ -71,16 +83,33 @@ export class GameApp {
       settings,
     );
 
-    if (this.currentGround) {
-      this.world.removeChild(this.currentGround);
-      this.currentGround.destroy({ children: true });
+    if (this.currentMapSprite) {
+      this.world.removeChild(this.currentMapSprite);
+      this.currentMapSprite.destroy({ texture: true });
     }
-    this.currentGround = container;
-    this.world.addChild(container);
-    this.currentMinimapSource = minimapCanvas;
 
+    // Convert map sprites into single texture
+    const texture = this.app.renderer.generateTexture({
+      target: container,
+      resolution: 1,
+      antialias: false,
+    });
+
+    // Create ONE sprite to hold the whole map
+    this.currentMapSprite = new Sprite(texture);
+    this.world.addChild(this.currentMapSprite);
+
+    // Cleanup
+    container.destroy({ children: true });
+
+    this.currentMinimapSource = minimapCanvas;
     if (this.minimap) {
       this.minimap.setMapImage(minimapCanvas);
+      this.minimap.update(
+        this.world,
+        this.app.screen.width,
+        this.app.screen.height,
+      );
     }
 
     this.isGenerating = false;
@@ -93,20 +122,16 @@ export class GameApp {
   }
 
   public teleportTo(relativeX: number, relativeY: number) {
-    // Calculate the target coordinates in World Pixels
     const targetX = relativeX * (MAP_WIDTH * TILE_SIZE);
     const targetY = relativeY * (MAP_HEIGHT * TILE_SIZE);
 
-    // Center the Camera
     let newX = this.app.screen.width / 2 - targetX;
     let newY = this.app.screen.height / 2 - targetY;
 
     const minX = this.app.screen.width - MAP_WIDTH * TILE_SIZE;
     const minY = this.app.screen.height - MAP_HEIGHT * TILE_SIZE;
 
-    // Clamp X (Between 'minX' and '0')
     newX = Math.max(minX, Math.min(0, newX));
-    // Clamp Y (Between 'minY' and '0')
     newY = Math.max(minY, Math.min(0, newY));
 
     this.world.position.set(newX, newY);
