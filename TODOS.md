@@ -33,4 +33,5 @@
 
 ## State
 - [ ] Loading screen on start/refresh
-- [ ] Persist state on refresh
+- [X] Persist state on refresh
+- [X] ECS for entity handling
